@@ -1,12 +1,10 @@
 const express = require("express");
 const path = require("path");
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 
 // rotas da API
 const usuarioRoutes = require("./routes/usuarioRoutes");
+app.use(express.json());
 app.use("/", usuarioRoutes);
 
 // servir arquivos estáticos do frontend
