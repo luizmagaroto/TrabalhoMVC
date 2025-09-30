@@ -1,12 +1,13 @@
 const express = require("express");
 const path = require("path");
 const app = express();
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // rotas da API
 const usuarioRoutes = require("./routes/usuarioRoutes");
-app.use("/auth", usuarioRoutes);
+app.use("/", usuarioRoutes);
 
 // servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, "frontend")));
@@ -16,8 +17,9 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
-
 const PORT = 8000; 
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+module.exports = app;

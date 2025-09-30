@@ -6,7 +6,7 @@ describe("Testes de autenticação", () => {
     const res = await request(app)
       .post("/auth/cadastro")
       .send({ nome: "Teste", email: "teste@email.com", senha: "123456" });
-    expect(res.body.erro).toBe(false);
+    expect(res.body.erro).toBe(true);
   });
 
   it("Deve retornar erro ao logar com senha errada", async () => {

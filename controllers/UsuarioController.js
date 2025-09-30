@@ -2,12 +2,15 @@ const bcryptjs = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 
+
+
 const prisma = new PrismaClient();
 
 class UsuarioController {
   // Cadastro de usuário
   static async cadastrar(req, res) {
     try {
+      console.log("req.body:", req.body);
       const { nome, email, senha } = req.body;
 
       if (!nome || !email || !senha) {
@@ -32,7 +35,7 @@ class UsuarioController {
         data: {
           nome,
           email,
-          senha: hashSenha,
+          senha: hashSenha
         },
       });
 
