@@ -1,112 +1,155 @@
-const path = require("path");
-const bcryptjs = require ("bcryptjs")
+const bcryptjs = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 
 const prisma = new PrismaClient();
 
-
 class UsuarioController {
-    static async cadastrar(req,res) {
-       const { nome, email, senha } = req.body;
+  // Cadastro de usuário
+  static async cadastrar(req, res) {
+    try {
+      const { nome, email, senha } = req.body;
 
-       const hashSenha = await bcryptjs.hash(senha, 10);
+      if (!nome || !email || !senha) {
+        return res.status(400).json({
+          mensagem: "Nome, email e senha são obrigatórios!",
+          erro: true,
+        });
+      }
+
+      // Verifica se já existe um usuário com este email
+      const existe = await prisma.usuario.findUnique({ where: { email } });
+      if (existe) {
+        return res.json({
+          mensagem: "Já existe um usuário com este email!",
+          erro: true,
+        });
+      }
+
+      const hashSenha = await bcryptjs.hash(senha, 10);
 
       const usuario = await prisma.usuario.create({
-       
         data: {
           nome,
           email,
           senha: hashSenha,
-          
-      }
-      });
-       res.json({
-         usuarioId: usuario.id,
-       });
-    }
-
-
-    static async login (req,res) {
-      try {
-        const { email, senha } = req.body;
-
-        if ( !email || !senha ) {
-          return res.status(400).json({ msg: "Email e senha são obrigatórios!"});
-        }
-           //verifica se o usuário existe
-        const usuario = await prisma.usuario.findUnique({
-          where: { email },
-        });
-
-        if ( !usuario ){
-          return res.json({ msg: "Usuário não existe! "});
-        }
-        //verifica se a senha esta correta 
-        const correto = await bcryptjs.compare(senha, usuario.senha);
-        if ( !correto ) {
-          return res.json({ msg: "Senha incorreta!"});
-        }
-        //emite um token
-        const token = jwt.sign({ id: usuario.id }, process.env.SENHA_TOKEN, {
-          expiresIn: "1h",
-        });
-
-        res.json({
-          msg: "Autenticado com sucesso!",
-          token: token, 
-        });
-      } catch (error) {
-        console.error(error);
-        res
-        .status(500)
-        .json({ msg: "Erro interno no servidor", error: error.message });
-      }
-    }
-//middleware
-    static async verificarAutenticacao (req, res, next ) {
-      const auth = req.headers ["authorization"];
-
-
-      if (auth) {
-        const token = auth.split(" ")[1];
-
-        jwt.verify(token, process.env.SENHA_TOKEN, (err, payload) => {
-          if (err) {
-            return res.json({
-              msg: "Seu login expirou!",
-            });
-          }
-          req.usuarioId = payload.id;
-          next();
-        });
-      } else {
-        res.json({
-          msg: "Token não encontrado",
-        });
-      }
-    }
-
-    static async verificaAdmin (req, res, next) {
-      if( !req.usuarioId ){
-        res.json({
-          msg: "Você não está autenticado!",
-        });
-      }
-
-      const usuario = await prisma.usuario.findUnique({
-        where: {
-          id: req.usuarioId,
         },
       });
 
-      if(!usuario.isAdmin){
-        return res.json({
-          msg: "Acesso negado! Você não é um administrador."
+      // Opcional: já gerar token no cadastro
+      const token = jwt.sign({ id: usuario.id }, process.env.SENHA_TOKEN, {
+        expiresIn: "1h",
+      });
+
+      res.json({
+        mensagem: "Usuário cadastrado com sucesso!",
+        erro: false,
+        token: token,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        mensagem: "Erro interno no servidor",
+        erro: true,
+      });
+    }
+  }
+
+  // Login de usuário
+  static async login(req, res) {
+    try {
+      const { email, senha } = req.body;
+
+      if (!email || !senha) {
+        return res.status(400).json({
+          mensagem: "Email e senha são obrigatórios!",
+          erro: true,
         });
       }
-      next();
+
+      const usuario = await prisma.usuario.findUnique({ where: { email } });
+
+      if (!usuario) {
+        return res.json({
+          mensagem: "Usuário não existe!",
+          erro: true,
+        });
+      }
+
+      const correto = await bcryptjs.compare(senha, usuario.senha);
+
+      if (!correto) {
+        return res.json({
+          mensagem: "Senha incorreta!",
+          erro: true,
+        });
+      }
+
+      const token = jwt.sign({ id: usuario.id }, process.env.SENHA_TOKEN, {
+        expiresIn: "1h",
+      });
+
+      res.json({
+        mensagem: "Autenticado com sucesso!",
+        erro: false,
+        token: token,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        mensagem: "Erro interno no servidor",
+        erro: true,
+      });
     }
+  }
+
+  // Middleware para verificar token
+  static async verificarAutenticacao(req, res, next) {
+    const auth = req.headers["authorization"];
+
+    if (auth) {
+      const token = auth.split(" ")[1];
+
+      jwt.verify(token, process.env.SENHA_TOKEN, (err, payload) => {
+        if (err) {
+          return res.json({
+            mensagem: "Seu login expirou!",
+            erro: true,
+          });
+        }
+        req.usuarioId = payload.id;
+        next();
+      });
+    } else {
+      res.json({
+        mensagem: "Token não encontrado",
+        erro: true,
+      });
+    }
+  }
+
+  // Middleware para verificar se é admin
+  static async verificaAdmin(req, res, next) {
+    if (!req.usuarioId) {
+      return res.json({
+        mensagem: "Você não está autenticado!",
+        erro: true,
+      });
+    }
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.usuarioId },
+    });
+
+    if (!usuario.isAdmin) {
+      return res.json({
+        mensagem: "Acesso negado! Você não é um administrador.",
+        erro: true,
+      });
+    }
+
+    next();
+  }
 }
 
 module.exports = UsuarioController;

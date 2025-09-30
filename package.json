@@ -4,6 +4,7 @@
   "description": "Projeto MVC com Express e Prisma",
   "main": "index.js",
   "scripts": {
+    "test": "jest",
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
@@ -17,6 +18,8 @@
     "prisma": "^6.16.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.0",
+    "supertest": "^7.1.4"
   }
 }

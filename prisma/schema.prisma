@@ -3,13 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // pode ser "mysql" ou "sqlite"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Usuario {
-  id       Int     @id @default(autoincrement())
-  nome     String
-  email    String  @unique
-  senha    String
+  id      Int     @id @default(autoincrement())
+  nome    String
+  email   String  @unique
+  senha   String
+  isAdmin Boolean @default(false)
 }

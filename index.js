@@ -1,9 +1,23 @@
 const express = require("express");
+const path = require("path");
 const app = express();
 
-const usuarioRoutes = require("./routes/usuarioRoutes.js");
-app.use("/usuarios", usuarioRoutes);
+app.use(express.json());
 
-app.listen(8000, (err) => {
-    console.log("Aplicação rodando em localhost:8000");
+// rotas da API
+const usuarioRoutes = require("./routes/usuarioRoutes");
+app.use("/auth", usuarioRoutes);
+
+// servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, "frontend")));
+
+// rota principal para abrir o index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
+});
+
+
+const PORT = 8000; 
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
